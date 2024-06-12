@@ -3,25 +3,21 @@ pragma solidity ^0.8.13;
 
 contract SneakerMarketplace {
 
-    struct Sneaker {
-        uint256 id;
-        string name;
-        string brand;
-        uint256 price;
-        address seller;
-        address buyer;
-        bool isSold;
-    }
-
-    uint256 private nextSneakerId;
     address private admin;
 
-    mapping(uint256 => Sneaker) private sneakers;
+    // maps an address to one of the following roles:
+    //   - 0: unregistered users
+    //   - 1: admin, the one that deploy the contract; do not use
+    //   - 2: seller
+    //   - 3: buyer
+    //   - others: invalid; do not use
+    mapping(address => uint8) private roles;
     mapping(address => uint256) private balances;
+    
+    // mapp address to the sneaker id
+    // track the exisiting listings
+    mapping(address => uint256) private listings;
 
-    event SneakerListed(uint256 indexed sneakerId, string name, string brand, uint256 price, address indexed seller);
-    event SneakerPurchased(uint256 indexed sneakerId, address indexed buyer, uint256 price);
-    event FundsWithdrawn(address indexed seller, uint256 amount);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Only admin can perform this action");
@@ -29,42 +25,77 @@ contract SneakerMarketplace {
     }
 
     modifier onlySeller(uint256 sneakerId) {
-        require(sneakers[sneakerId].seller == msg.sender, "Only the seller can perform this action");
+        require(roles[msg.sender] == 2, "Only the seller can perform this action");
         _;
     }
 
+    modifier onlyBuyer(uint256 sneakerId) {
+        require(roles[msg.sender] == 3, "Only the buyer can perform this action");
+        _;
+    }
+
+
     constructor() {
+        // setting the admin as the deployer of the contract
         admin = msg.sender;
     }
 
-    function listSneaker(string memory name, string memory brand, uint256 price) public returns (uint256) {
-        require(price > 0, "Price must be greater than zero");
-        
-        sneakers[nextSneakerId] = Sneaker({
-            id: nextSneakerId,
-            name: name,
-            brand: brand,
-            price: price,
-            seller: msg.sender,
-            buyer: address(0),
-            isSold: false
-        });
+    // register a new user
 
-        emit SneakerListed(nextSneakerId, name, brand, price, msg.sender);
-        nextSneakerId++;
-        return nextSneakerId - 1;
+    function registerBuyer() public returns (bool) {
+        // check if user is unregistered
+        if (roles[msg.sender] == 0) {
+            // make user a buyer
+            roles[msg.sender] = 3;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    function buySneaker(uint256 sneakerId) public payable {
-        Sneaker storage sneaker = sneakers[sneakerId];
-        require(!sneaker.isSold, "Sneaker already sold");
-        require(msg.value >= sneaker.price, "Insufficient funds to purchase the sneaker");
+    // Register the caller as seller
+    function registerSeller() public returns (bool) {
+        if (roles[msg.sender] == 0) {
+            // make user a guest
+            roles[msg.sender] = 2;
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-        sneaker.buyer = msg.sender;
-        sneaker.isSold = true;
-        balances[sneaker.seller] += msg.value;
+    // function for buyers
 
-        emit SneakerPurchased(sneakerId, msg.sender, sneaker.price);
+    // when buyer buys a sneaker
+    // should transfer money to DeSneaker
+    function buySneaker(uint256 sneakerId) public payable onlyBuyer(sneakerId) {
+    }
+
+    // after buying, buyer will be able to confirm delivery
+    // this wil then ask the vault (smart contract) to withdraw the funds to the seller
+    function confirmDelivery(uint256 sneakerId) public onlyBuyer(sneakerId) {
+    }
+
+
+
+    // functions for the seller
+
+    // list a sneaker
+    function listSneaker(uint256 sneakerId) public payable onlySeller(sneakerId) {
+        // make sure seller doesn't already have a listing
+        require(listings[msg.sender] == 0, "Already have a listing");
+        listings[msg.sender] = sneakerId;
+    }
+
+    // take the listing down
+    function withdrawListing() public onlySeller(listings[msg.sender]) {
+        listings[msg.sender] = 0;
+    }
+
+    // getters
+    function getListing(address seller) public view returns (uint256 sneakerId) {
+        sneakerId = listings[seller];
+        return sneakerId;
     }
 
     function withdrawFunds() public {
@@ -74,10 +105,7 @@ contract SneakerMarketplace {
         balances[msg.sender] = 0;
         payable(msg.sender).transfer(amount);
 
-        emit FundsWithdrawn(msg.sender, amount);
     }
 
-    function getSneaker(uint256 sneakerId) public view returns (Sneaker memory) {
-        return sneakers[sneakerId];
-    }
+
 }
