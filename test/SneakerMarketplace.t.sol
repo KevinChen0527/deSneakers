@@ -16,8 +16,8 @@ contract SneakerMarketplaceTest is Test {
     address public seller = address(0x02);
     address public buyer = address(0x03);
 
-    uint256 public initSellerBalance = 0.1 ether;
-    uint256 public initBuyerBalance = 0.5 ether;
+    uint256 public initSellerBalance = 1 ether;
+    uint256 public initBuyerBalance = 1 ether;
 
     function setUp() public {
         vm.deal(seller, initSellerBalance);
@@ -35,7 +35,25 @@ contract SneakerMarketplaceTest is Test {
         vm.stopPrank();
     }
 
+    // testing the register functions
 
+    function test_registerBuyer() public {
+        address temp = address(0x05);
+        vm.startPrank(temp);
+        bool registered = marketplace.registerBuyer();
+        assertEq(registered, true, "User should be registered");
+        vm.stopPrank();
+    }
+
+    function test_registerSeller() public {
+        address temp = address(0x05);
+        vm.startPrank(temp);
+        bool registered = marketplace.registerSeller();
+        assertEq(registered, true, "User should be registered");
+        vm.stopPrank();
+    }
+
+    // list a sneaker
     function test_listSneaker() public {
         vm.startPrank(seller);
         uint256 sneakerId = 123;
@@ -48,6 +66,7 @@ contract SneakerMarketplaceTest is Test {
         vm.stopPrank();
     }
 
+    // list sneaker when already have a listing
     function test_listSneaker_listingAlreadyExisted() public {
         vm.startPrank(seller);
         uint256 sneakerId = 123;
@@ -68,19 +87,79 @@ contract SneakerMarketplaceTest is Test {
 
     }
 
-    // function test_buySneaker() public {
-    //     vm.startPrank(seller);
-    //     uint256 sneakerId = marketplace.listSneaker("Air Max", "Nike", 0.05 ether);
-    //     vm.stopPrank();
+    function test_buySneaker() public {
+        // list the sneaker first
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
 
-    //     vm.startPrank(buyer);
-    //     marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+        // try buying it
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
 
-    //     (, , , , , address listedBuyer, bool isSold) = marketplace.getSneaker(sneakerId);
-    //     assertEq(listedBuyer, buyer);
-    //     assertEq(isSold, true);
-    //     vm.stopPrank();
-    // }
+        // check it the balance change are correct
+        // buyer should have 0.95 eth
+
+        uint256 buyerBalance = buyer.balance;
+        assertEq(buyerBalance, 0.95 ether, "Balance is wrong, Buyer should have paid 0.05 eth");
+        vm.stopPrank();
+
+    }
+
+    // test confrim delivery
+    function test_confirmDelivery_delivered() public {
+        // list the sneaker first
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        // try buying it
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+
+        // check it the balance change are correct
+        // buyer should have 0.95 eth
+
+        uint256 buyerBalance = buyer.balance;
+        assertEq(buyerBalance, 0.95 ether, "Balance is wrong, Buyer should have paid 0.05 eth");
+
+        marketplace.confirmDelivery(sneakerId);
+
+        // seller should receive 0.05 eth
+
+        uint256 sellerBalance = seller.balance;
+        assertEq(sellerBalance, 1.05 ether, "Balance is wrong, Seller should have received 0.05 eth");
+        vm.stopPrank();
+    }
+
+// test confrim delivery
+    function test_noDelivery() public {
+        // list the sneaker first
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        // try buying it
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+
+        // check it the balance change are correct
+        // buyer should have 0.95 eth
+
+        uint256 buyerBalance = buyer.balance;
+        assertEq(buyerBalance, 0.95 ether, "Balance is wrong, Buyer should have paid 0.05 eth");
+
+        marketplace.noDelivery(sneakerId);
+
+        // buyer should receive 0.05 eth
+        buyerBalance = buyer.balance;
+
+        assertEq(buyerBalance, 1 ether, "Balance is wrong, Buyer should have received 0.05 eth");
+        vm.stopPrank();
+    }
 
     // function test_withdrawFunds() public {
     //     vm.startPrank(seller);
