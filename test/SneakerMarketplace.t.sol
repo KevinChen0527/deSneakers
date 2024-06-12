@@ -35,6 +35,7 @@ contract SneakerMarketplaceTest is Test {
         vm.stopPrank();
     }
 
+
     function test_listSneaker() public {
         vm.startPrank(seller);
         uint256 sneakerId = 123;
@@ -45,6 +46,26 @@ contract SneakerMarketplaceTest is Test {
         assertEq(id, sneakerId);
 
         vm.stopPrank();
+    }
+
+    function test_listSneaker_listingAlreadyExisted() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+
+        uint256 id = marketplace.getListing(seller);
+
+        assertEq(id, sneakerId);
+
+        sneakerId = 456;
+        vm.expectRevert("Already have a listing");
+        marketplace.listSneaker(sneakerId);
+
+        id = marketplace.getListing(seller);
+        assertEq(id, 123, "Listing should remain sneaker ID 123 as duplicate listing is not allowed");
+
+        vm.stopPrank();
+
     }
 
     // function test_buySneaker() public {
