@@ -138,7 +138,7 @@ contract SneakerMarketplace {
 
 
     // helper function to find the seller by sneaker ID
-    function getSellerBySneakerId(uint256 sneakerId) private view returns (address seller) {
+    function getSellerBySneakerId(uint256 sneakerId) public view returns (address seller) {
         return sneakerToSeller[sneakerId];
     }
 }

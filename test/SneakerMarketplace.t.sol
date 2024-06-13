@@ -53,6 +53,29 @@ contract SneakerMarketplaceTest is Test {
         vm.stopPrank();
     }
 
+    // test getSellerbyListing
+
+    function test_getSellerByListing() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        address _seller = marketplace.getSellerBySneakerId(sneakerId);
+        assertEq(_seller, seller, "Seller should be seller");
+        vm.stopPrank();
+    }
+
+    // test getSellerbyListing after removing the listing
+
+    function test_getSellerByListing_afterRemovingListing() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        marketplace.withdrawListing();
+        address _seller = marketplace.getSellerBySneakerId(sneakerId);
+        assertEq(_seller, address(0), "Seller should be 0");
+        vm.stopPrank();
+    }
+
     // list a sneaker
     function test_listSneaker() public {
         vm.startPrank(seller);
@@ -63,6 +86,17 @@ contract SneakerMarketplaceTest is Test {
 
         assertEq(id, sneakerId);
 
+        vm.stopPrank();
+    }
+
+    // test the withdrawListing function
+    function test_withdrawListing() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        marketplace.withdrawListing();
+        uint256 id = marketplace.getListing(seller);
+        assertEq(id, 0, "Listing should be withdrawn");
         vm.stopPrank();
     }
 
@@ -134,7 +168,7 @@ contract SneakerMarketplaceTest is Test {
         vm.stopPrank();
     }
 
-// test confrim delivery
+    // test no delivery
     function test_noDelivery() public {
         // list the sneaker first
         vm.startPrank(seller);
@@ -161,21 +195,5 @@ contract SneakerMarketplaceTest is Test {
         vm.stopPrank();
     }
 
-    // function test_withdrawFunds() public {
-    //     vm.startPrank(seller);
-    //     uint256 sneakerId = marketplace.listSneaker("Air Max", "Nike", 0.05 ether);
-    //     vm.stopPrank();
 
-    //     vm.startPrank(buyer);
-    //     marketplace.buySneaker{value: 0.05 ether}(sneakerId);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(seller);
-    //     uint256 sellerBalanceBefore = seller.balance;
-    //     marketplace.withdrawFunds();
-    //     uint256 sellerBalanceAfter = seller.balance;
-
-    //     assertEq(sellerBalanceAfter, sellerBalanceBefore + 0.05 ether);
-    //     vm.stopPrank();
-    // }
 }
