@@ -196,4 +196,167 @@ contract SneakerMarketplaceTest is Test {
     }
 
 
+    function test_overflowUnderflow() public {
+        // Simulate very high values to check overflow
+        vm.startPrank(seller);
+        uint256 maxUint = type(uint256).max;
+        marketplace.listSneaker(maxUint);
+        address _seller = marketplace.getSellerBySneakerId(maxUint);
+        assertEq(_seller, seller, "Should handle maximum uint256 values correctly");
+        vm.stopPrank();
+    }
+
+    function test_unauthorizedWithdrawalOfListing() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        vm.expectRevert("Only the seller can perform this action");
+        marketplace.withdrawListing();
+        vm.stopPrank();
+    }
+
+    function test_unauthorizedConfirmDelivery() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+        vm.stopPrank();
+
+        address unauthorizedUser = address(0x04);
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert("Only the buyer can perform this action");
+        marketplace.confirmDelivery(sneakerId);
+        vm.stopPrank();
+    }
+
+    function test_confirmDeliveryWithoutPurchase() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        vm.expectRevert("You are not the buyer of this sneaker");
+        marketplace.confirmDelivery(sneakerId);
+        vm.stopPrank();
+    }
+
+    function test_unauthorizedNoDeliveryClaim() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+        vm.stopPrank();
+
+        address unauthorizedUser = address(0x04);
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert("Only the buyer can perform this action");
+        marketplace.noDelivery(sneakerId);
+        vm.stopPrank();
+    }
+
+    function test_reRegisterAsBuyer() public {
+        vm.startPrank(buyer);
+        bool registered = marketplace.registerBuyer();
+        assertEq(registered, false, "User should not be able to re-register as buyer");
+        vm.stopPrank();
+    }
+
+    function test_reRegisterAsSeller() public {
+        vm.startPrank(seller);
+        bool registered = marketplace.registerSeller();
+        assertEq(registered, false, "User should not be able to re-register as seller");
+        vm.stopPrank();
+    }
+
+    function test_registerAsBothBuyerAndSeller() public {
+        address user = address(0x04);
+        vm.deal(user, 1 ether);
+
+        vm.startPrank(user);
+        bool registered = marketplace.registerBuyer();
+        assertEq(registered, true, "User should be registered as buyer");
+
+        registered = marketplace.registerSeller();
+        assertEq(registered, false, "User should not be able to register as seller");
+        vm.stopPrank();
+    }
+
+    function test_withdrawListingNotOwned() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        address otherSeller = address(0x04);
+        vm.deal(otherSeller, 1 ether);
+
+        vm.startPrank(otherSeller);
+        vm.expectRevert("Only the seller can perform this action");
+        marketplace.withdrawListing();
+        vm.stopPrank();
+    }
+
+    function test_buyNonexistentSneaker() public {
+        vm.startPrank(buyer);
+        vm.expectRevert("Sneaker not listed for sale");
+        marketplace.buySneaker{value: 0.05 ether}(999);
+        vm.stopPrank();
+    }
+
+    function test_confirmDeliveryByUnauthorizedUser() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+        vm.stopPrank();
+
+        address unauthorizedUser = address(0x04);
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert("Only the buyer can perform this action");
+        marketplace.confirmDelivery(sneakerId);
+        vm.stopPrank();
+    }
+
+    function test_noDeliveryClaimByUnauthorizedUser() public {
+        vm.startPrank(seller);
+        uint256 sneakerId = 123;
+        marketplace.listSneaker(sneakerId);
+        vm.stopPrank();
+
+        vm.startPrank(buyer);
+        marketplace.buySneaker{value: 0.05 ether}(sneakerId);
+        vm.stopPrank();
+
+        address unauthorizedUser = address(0x04);
+        vm.startPrank(unauthorizedUser);
+        vm.expectRevert("Only the buyer can perform this action");
+        marketplace.noDelivery(sneakerId);
+        vm.stopPrank();
+    }
+
+    function test_doubleListingBySeller() public {
+        vm.startPrank(seller);
+        uint256 sneakerId1 = 123;
+        marketplace.listSneaker(sneakerId1);
+        
+        uint256 sneakerId2 = 456;
+        vm.expectRevert("Already have a listing");
+        marketplace.listSneaker(sneakerId2);
+        vm.stopPrank();
+    }
+
 }
+
