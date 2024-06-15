@@ -1,68 +1,55 @@
-## Foundry
+## DeSneakers
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+# Introduction and Overview
 
-Foundry consists of:
+DeSneakers is a decentralized platform specifically designed for sneaker enthusiasts to trade sneakers using cryptocurrency. Leveraging blockchain technology, DeSneakers ensures secure, transparent, and efficient transactions, eliminating the risks associated with traditional online marketplaces. The platform allows users to buy, sell, and trade sneakers of any condition, providing a unique and reliable trading experience.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+# Setup Instructions
+Clone the repository:
+```
+git clone https://github.com/your-repo/desneakers.git
+cd desneakers
 ```
 
-### Test
+Install dependencies:
 
-```shell
-$ forge test
+```
+forge build
+
 ```
 
-### Format
+Run tests:
 
-```shell
-$ forge fmt
+```
+forge test
 ```
 
-### Gas Snapshots
+Deploy the smart contracts:
 
-```shell
-$ forge snapshot
+```
+forge script DeployScript --rpc-url <YOUR_RPC_URL> --private-key <YOUR_PRIVATE_KEY> --broadcast
 ```
 
-### Anvil
+Additional Information
+For detailed information on Foundry, refer to the Foundry Book.
+To interact with the smart contracts, use tools like Ethers.js.
 
-```shell
-$ anvil
-```
 
-### Deploy
+# User Roles
+User Roles and Permissions
+Guest:
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+Browse sneaker listings.
+View user profiles and reviews.
+Registered User:
 
-### Cast
+Create sneaker listings.
+Place bids on listings.
+Rate and review other users.
+Access transaction history.
+Administrator:
 
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
-# deSneakers
-# deSneakers
+Manage user accounts.
+Verify sneaker listings.
+Resolve disputes between users.
+Why Our App Stands Out
